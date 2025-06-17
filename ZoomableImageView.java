@@ -64,6 +64,8 @@ public class ZoomableImageView extends View {
 	// of the base matrix and the supplementary matrix.
 	private Matrix mDisplayMatrix = new Matrix();
 
+	private boolean mMatrixDirty = true;
+
 	// A replacement ImageView matrix
 	private Matrix mMatrix = new Matrix();
 
@@ -166,6 +168,7 @@ public class ZoomableImageView extends View {
 		}
 		if (mBitmap != null) {
 			setBaseMatrix(mBitmap, mBaseMatrix);
+			mMatrixDirty = true;
 			setImageMatrix(getImageViewMatrix());
 		}
 	}
@@ -213,6 +216,7 @@ public class ZoomableImageView extends View {
 		}
 
 		mSuppMatrix.reset();
+		mMatrixDirty = true;
 		setImageMatrix(getImageViewMatrix());
 		mMaxZoom = maxZoom();
 		
@@ -320,8 +324,11 @@ public class ZoomableImageView extends View {
 
 	// Combine the base matrix and the supp matrix to make the final matrix.
 	protected Matrix getImageViewMatrix() {
-		mDisplayMatrix.set(mBaseMatrix);
-		mDisplayMatrix.postConcat(mSuppMatrix);
+		if (mMatrixDirty) {
+			mDisplayMatrix.set(mBaseMatrix);
+			mDisplayMatrix.postConcat(mSuppMatrix);
+			mMatrixDirty = false;
+		}
 		return mDisplayMatrix;
 	}
 
@@ -359,6 +366,7 @@ public class ZoomableImageView extends View {
 		float deltaScale = scale / oldScale;
 
 		mSuppMatrix.postScale(deltaScale, deltaScale, centerX, centerY);
+		mMatrixDirty = true;
 		setImageMatrix(getImageViewMatrix());
 		center(true, true, false);
 	}
@@ -415,6 +423,7 @@ public class ZoomableImageView extends View {
 		float height = getHeight();
 
 		mSuppMatrix.postScale(rate, rate, width/2F, height/2F);
+		mMatrixDirty = true;
 		setImageMatrix(getImageViewMatrix());
 
 	}
@@ -432,9 +441,11 @@ public class ZoomableImageView extends View {
 		tmp.postScale(1F/sScaleRate, 1F/sScaleRate, width/2F, height/2F);
 		if (getScale(tmp) < 1F) {
 			mSuppMatrix.setScale(1F, 1F, width/2F, height/2F);
+			mMatrixDirty = true;
 		} else {
 			mSuppMatrix.postScale(1F/rate, 1F/rate, width/2F, height/2F);
 		}
+		mMatrixDirty = true;
 		setImageMatrix(getImageViewMatrix());
 		center(true, true, false);
 
@@ -443,6 +454,7 @@ public class ZoomableImageView extends View {
 	// Unchanged from ImageViewTouchBase
 	protected void postTranslate(float dx, float dy) {
 		mSuppMatrix.postTranslate(dx, dy);
+		mMatrixDirty = true;
 	}
 
 	// Fling a view by a distance over time
